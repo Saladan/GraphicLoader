@@ -35,7 +35,7 @@ import javax.swing.ImageIcon;
  * wich are located at assets.textures.
  *
  * @author Saladan
- * @version v1.1.0
+ * @version v1.1.1
  */
 public class GraphicLoader {
 
@@ -48,12 +48,14 @@ public class GraphicLoader {
      * icon was already loaded, this icon is returned, without creating a new
      * one.
      *
-     * The global location for textures is "assets/textures". Here is added the
-     * folder and the name of the texture file. The ".png" is automatically
-     * added, if not already there.
+     * The path of the graphic file is resulting from the global path and the
+     * given location. The ending ".png" is automatically added.
      *
-     * @param location the location of texture in form "folder:[folder:]name"
-     * @return the {@link ImageIcon} at this location
+     * @param location the location of texture in form
+     * "[folder:[folder:...]name"
+     * @return the created {@link ImageIcon}
+     * @throws IllegalArgumentException if the location doesn't match the
+     * pattern
      * @see ImageIcon
      * @see createIcon(String, boolean)
      */
@@ -68,34 +70,38 @@ public class GraphicLoader {
      * routine creates a new icon, no matter if it already exists. If the icon
      * was not already loaded {@code forced == true} then two icons are created.
      *
-     * The global location for textures is "assets/textures". Here is added the
-     * folder and the name of the texture file. The ".png" is automatically
-     * added, if not already there.
+     * The path of the graphic file is resulting from the global path and the
+     * given location. The ending ".png" is automatically added.
      *
-     * @param location the location of texture in form "folder:[folder:]name"
+     * @param location the location of texture in form
+     * "[folder:[folder:...]]name"
      * @param force force the creation of an {@link ImageIcon}
-     * @return the {@link ImageIcon} at this location
+     * @return the created {@link ImageIcon}
+     * @throws IllegalArgumentException if the location doesn't match the
+     * pattern
      * @see ImageIcon
      * @see createIcon(String)
      */
     public static ImageIcon createIcon(String location, boolean force) {
-        if (!ICONS.containsKey(location) || force) {
-            String[] loc = location.split(":");
-            String path = GLOBAL_LOCATION.getPath();
-            for (String s : loc) {
-                path += File.separator + s;
-            }
-            if (!path.endsWith(".png")) {
+        if (!location.matches("^([a-zA-Z]+:)*[a-zA-Z]+")) {
+            if (!ICONS.containsKey(location) || force) {
+                String[] loc = location.split(":");
+                String path = GLOBAL_LOCATION.getPath();
+                for (String s : loc) {
+                    path += File.separator + s;
+                }
                 path += ".png";
+                File file = new File(path);
+                if (force) {
+                    return createIcon(file);
+                } else {
+                    ICONS.putIfAbsent(location, createIcon(file));
+                }
             }
-            File file = new File(path);
-            if (force) {
-                return createIcon(file);
-            } else {
-                ICONS.putIfAbsent(location, createIcon(file));
-            }
+            return ICONS.get(location);
+        } else {
+            throw new IllegalArgumentException(location + " doesn't match [folder:[folder:...]]name");
         }
-        return ICONS.get(location);
     }
 
     /**
@@ -119,7 +125,7 @@ public class GraphicLoader {
 
     /**
      * Returns the global location for graphic loading.
-     * 
+     *
      * @return the current global graphic location
      */
     public static File getGlobalLocation() {
